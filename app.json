@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "talli-money-manager",
+    "name": "Talli",
     "slug": "talli-money-manager",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {
@@ -19,6 +19,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-image",
+      "expo-font",
+      "expo-splash-screen"
+    ],
+    "scheme": "talli",
+    "experiments": {
+      "typedRoutes": true
     }
   }
 }
