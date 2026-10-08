@@ -1,31 +1,6 @@
 import type { TileArtwork } from '@/components/ui/CategoryTile';
-import type { IconName } from '@/components/ui/Icon';
 
-import type { TransactionKind } from './types';
-
-export type TransactionCategory = {
-  id: string;
-  label: string;
-  icon: IconName;
-};
-
-export const transactionCategories: Record<TransactionKind, TransactionCategory[]> = {
-  expense: [
-    { id: 'food', label: 'Food', icon: 'categoryFood' },
-    { id: 'transport', label: 'Transport', icon: 'categoryTransport' },
-    { id: 'shopping', label: 'Shopping', icon: 'categoryShopping' },
-    { id: 'pet', label: 'Pet', icon: 'categoryPet' },
-    { id: 'subscription', label: 'Subscription', icon: 'categorySubscription' },
-    { id: 'utilities', label: 'Utilities', icon: 'categoryUtilities' },
-  ],
-  income: [
-    { id: 'salary', label: 'Salary', icon: 'categorySalary' },
-    { id: 'freelance', label: 'Freelance', icon: 'categoryFreelance' },
-    { id: 'investment', label: 'Investment', icon: 'categoryInvestment' },
-    { id: 'gift', label: 'Gift', icon: 'categoryGift' },
-    { id: 'refund', label: 'Refund', icon: 'categoryRefund' },
-  ],
-};
+import type { Account } from './types';
 
 export type IllustratedOption = {
   id: string;
@@ -128,3 +103,65 @@ export const budgetCategories: IllustratedOption[] = [
     },
   },
 ];
+
+/**
+ * Expense categories in the Add Transaction sheet: the same illustrated tiles as budgets, except
+ * that Figma sits the shopping cart 2pt further right on this sheet.
+ */
+export const expenseCategories: IllustratedOption[] = budgetCategories.map((category) =>
+  category.id === 'shopping' ? { ...category, artwork: { ...category.artwork, x: 5 } } : category,
+);
+
+/** Income sources in the Add Transaction sheet. */
+export const incomeCategories: IllustratedOption[] = [
+  {
+    id: 'salary',
+    label: 'Salary',
+    artwork: {
+      source: require('@/assets/images/income-salary.png'),
+      x: 4.5,
+      y: 4,
+      width: 31,
+      height: 28,
+      image: { left: -0.3873, top: -0.3098, width: 1.7746, height: 1.7364 },
+    },
+  },
+  {
+    id: 'freelance',
+    label: 'Freelance',
+    artwork: {
+      source: require('@/assets/images/income-freelance.png'),
+      x: 4.5,
+      y: 6,
+      width: 32,
+      height: 32,
+      image: { left: -0.26, top: -0.1717, width: 1.52, height: 1.3434 },
+    },
+  },
+  {
+    id: 'investment',
+    label: 'Investment',
+    artwork: zoomed(require('@/assets/images/account-investments.png'), 5, 6, 30, 1.38),
+  },
+  {
+    id: 'gift',
+    label: 'Gift',
+    artwork: {
+      source: require('@/assets/images/income-gift.png'),
+      x: 4.5,
+      y: 4,
+      width: 32,
+      height: 32,
+      image: { left: -0.3528, top: -0.2312, width: 1.69, height: 1.4936 },
+    },
+  },
+  { id: 'refund', label: 'Refund', artwork: zoomed(require('@/assets/images/income-refund.png'), 5, 4, 32, 1.29) },
+];
+
+/** Generic wallet shown for accounts without a type (e.g. "Main Account"). */
+const walletArtwork = zoomed(require('@/assets/images/account-wallet.png'), 4, 4, 32, 1.26);
+
+/** Illustration for an account's 40pt tile, from the type picked when it was added. */
+export function accountArtwork(account: Account): TileArtwork {
+  return accountTypes.find((type) => type.id === account.typeId)?.artwork ?? walletArtwork;
+}

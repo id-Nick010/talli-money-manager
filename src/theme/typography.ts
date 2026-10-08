@@ -52,6 +52,7 @@ export const typography = {
   bodySm: { fontFamily: fonts.bodyRegular, fontSize: 13 },
   statusLabel: { fontFamily: fonts.bodyMedium, fontSize: 11 },
   captionSm: { fontFamily: fonts.bodyRegular, fontSize: 11 },
+  labelSemiboldSm: { fontFamily: fonts.bodySemibold, fontSize: 11 },
   labelSemibold: { fontFamily: fonts.bodySemibold, fontSize: 12 },
   labelSemiboldMd: { fontFamily: fonts.bodySemibold, fontSize: 13 },
   labelBold: { fontFamily: fonts.bodyBold, fontSize: 12 },
@@ -103,6 +104,13 @@ export const typography = {
   linkBold: { fontFamily: fonts.bodyBold, fontSize: 12 },
   headerAction: { fontFamily: fonts.bodyBold, fontSize: 13 },
   note: { fontFamily: fonts.bodyMedium, fontSize: 11, lineHeight: 14.85 },
+
+  /** Sign up */
+  authTitle: { fontFamily: fonts.displaySemibold, fontSize: 30, lineHeight: 34.5 },
+  authSubtitle: { fontFamily: fonts.bodyRegular, fontSize: 13, lineHeight: 18.85 },
+  consent: { fontFamily: fonts.bodyRegular, fontSize: 11, lineHeight: 16.5 },
+  consentLink: { fontFamily: fonts.bodySemibold, fontSize: 11, lineHeight: 16.5 },
+  buttonBody: { fontFamily: fonts.bodySemibold, fontSize: 14 },
 
   /** Emoji glyphs use the system emoji font, so only size is set. */
   emoji: { fontSize: 18, lineHeight: 22 },

@@ -8,6 +8,6 @@ export const useProfile = store.useValue;
 
 export type ProfileDetails = Pick<Profile, 'name' | 'email' | 'phone' | 'birthday'>;
 
-export function updateProfile(details: ProfileDetails) {
+export function updateProfile(details: Partial<ProfileDetails>) {
   store.update(details);
 }

@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
+import { useSignedIn } from '@/data/authStore';
 import { fonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,6 +33,8 @@ export default function RootLayout() {
     [fonts.bodyBold]: require('@/assets/fonts/GeneralSans-Bold.otf'),
   });
 
+  const signedIn = useSignedIn();
+
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync();
   }, [loaded, error]);
@@ -42,12 +45,19 @@ export default function RootLayout() {
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        {/* Sheets draw their own scrim and slide-up animation over the current tab. */}
-        <Stack.Screen name="add-transaction" options={sheetOptions} />
-        <Stack.Screen name="add-bill" options={sheetOptions} />
-        <Stack.Screen name="add-account" options={sheetOptions} />
-        <Stack.Screen name="budget-setup" options={sheetOptions} />
+        {/* Signing in or out swaps which group is reachable; the router moves to the first open screen. */}
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(tabs)" />
+          {/* Sheets draw their own scrim and slide-up animation over the current tab. */}
+          <Stack.Screen name="add-transaction" options={sheetOptions} />
+          <Stack.Screen name="add-bill" options={sheetOptions} />
+          <Stack.Screen name="add-account" options={sheetOptions} />
+          <Stack.Screen name="budget-setup" options={sheetOptions} />
+        </Stack.Protected>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="sign-up" />
+          <Stack.Screen name="log-in" options={{ animation: 'fade' }} />
+        </Stack.Protected>
       </Stack>
     </>
   );

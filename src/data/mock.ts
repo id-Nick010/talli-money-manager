@@ -80,7 +80,7 @@ const demoAccounts: Account[] = [
     last4: '4820',
     artwork: require('@/assets/images/wallet-illustration.png'),
   },
-  { id: 'savings', name: 'Savings', balance: 12750, last4: '4820' },
+  { id: 'savings', name: 'Savings', balance: 12750, last4: '4820', typeId: 'savings' },
   { id: 'investment', name: 'Investment', balance: 3420.8, last4: '4820' },
 ];
 

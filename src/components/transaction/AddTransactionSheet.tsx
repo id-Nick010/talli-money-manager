@@ -1,22 +1,26 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { AppText, BottomSheet, DatePickerField, SheetButton } from '@/components/ui';
-import { transactionCategories } from '@/data/categories';
+import { AppText, BottomSheet, CategoryTile, DatePickerField, Icon, SheetButton } from '@/components/ui';
+import { useAccounts } from '@/data/accountsStore';
+import { expenseCategories, incomeCategories } from '@/data/categories';
 import type { TransactionKind } from '@/data/types';
-import { colors, typography, type TypographyVariant } from '@/theme';
+import { colors, shadows, typography, type TypographyVariant } from '@/theme';
 import { CURRENCY_SYMBOL, formatAmountInput, parseAmount } from '@/utils/format';
 
-import { CategoryChip } from './CategoryChip';
+import { AccountPicker } from './AccountPicker';
 import { SegmentedControl } from './SegmentedControl';
 
-export type TransactionDraft = {
-  kind: TransactionKind;
-  amount: number;
-  description: string;
-  categoryId: string;
-  date: Date;
-};
+type SheetMode = TransactionKind | 'transfer';
+
+/** Figma keeps the 1pt stroke out of the padding; React Native pads inside the border. */
+const STROKE = 1;
+
+type DraftBase = { amount: number; description: string; date: Date };
+
+export type TransactionDraft =
+  | (DraftBase & { kind: TransactionKind; categoryId: string; accountId: string })
+  | (DraftBase & { kind: 'transfer'; fromAccountId: string; toAccountId: string });
 
 type Props = {
   /** Called once the dismiss animation finishes. Keep it referentially stable. */
@@ -24,96 +28,177 @@ type Props = {
   onSubmit: (draft: TransactionDraft) => void;
 };
 
-const KIND_OPTIONS = [
-  { value: 'expense', label: 'Expense' },
+const MODE_OPTIONS = [
+  { value: 'expense', label: 'Expenses' },
   { value: 'income', label: 'Income' },
+  { value: 'transfer', label: 'Transfer' },
 ] as const;
 
-/** Copy and styling that differ between the Expense and Income designs. */
-const KIND_CONFIG: Record<
-  TransactionKind,
+/** Copy and label sizes that differ between the Expenses, Income and Transfer designs. */
+const MODE_CONFIG: Record<
+  SheetMode,
   {
-    labelVariant: TypographyVariant;
-    chipLabelVariant: TypographyVariant;
-    descriptionLabel: string;
+    amountLabel: TypographyVariant;
+    descriptionLabel: TypographyVariant;
+    dateLabel: TypographyVariant;
     descriptionPlaceholder: string;
     submitLabel: string;
   }
 > = {
   expense: {
-    labelVariant: 'fieldLabel',
-    chipLabelVariant: 'labelSemibold',
-    descriptionLabel: 'Description',
+    amountLabel: 'fieldLabel',
+    descriptionLabel: 'fieldLabel',
+    dateLabel: 'fieldLabel',
     descriptionPlaceholder: 'What was it for?',
     submitLabel: 'Add Transaction',
   },
   income: {
-    labelVariant: 'fieldLabelSm',
-    chipLabelVariant: 'labelSemiboldMd',
-    descriptionLabel: 'Source Description',
+    amountLabel: 'fieldLabel',
+    descriptionLabel: 'fieldLabelSm',
+    dateLabel: 'fieldLabel',
     descriptionPlaceholder: 'Where is it from?',
     submitLabel: 'Add Income',
   },
+  transfer: {
+    amountLabel: 'fieldLabelSm',
+    descriptionLabel: 'fieldLabelSm',
+    dateLabel: 'fieldLabelSm',
+    descriptionPlaceholder: 'What is it for?',
+    submitLabel: 'Add Transfer',
+  },
 };
 
+const firstCategory = (mode: TransactionKind) => (mode === 'expense' ? expenseCategories : incomeCategories)[0].id;
+
 export function AddTransactionSheet({ onClose, onSubmit }: Props) {
-  const [kind, setKind] = useState<TransactionKind>('expense');
+  const [mode, setMode] = useState<SheetMode>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [categoryId, setCategoryId] = useState(transactionCategories.expense[0].id);
+  const [categoryId, setCategoryId] = useState(firstCategory('expense'));
   const [date, setDate] = useState(() => new Date());
-  const config = KIND_CONFIG[kind];
-  const categories = transactionCategories[kind];
+  const config = MODE_CONFIG[mode];
 
-  const changeKind = (next: TransactionKind) => {
-    if (next === kind) return;
-    setKind(next);
-    // Categories differ per kind; amount and description carry over.
-    setCategoryId(transactionCategories[next][0].id);
+  const accounts = useAccounts();
+  const [accountId, setAccountId] = useState(accounts[0]?.id);
+  const [fromAccountId, setFromAccountId] = useState(accounts[0]?.id);
+  const [toAccountId, setToAccountId] = useState(accounts[1]?.id);
+  const canTransfer = accounts.length >= 2;
+
+  const changeMode = (next: SheetMode) => {
+    if (next === mode) return;
+    setMode(next);
+    // Categories differ per mode; amount, description and date carry over.
+    if (next !== 'transfer') setCategoryId(firstCategory(next));
+  };
+
+  const swapAccounts = () => {
+    setFromAccountId(toAccountId);
+    setToAccountId(fromAccountId);
   };
 
   const amountValue = parseAmount(amount);
-  const canSubmit = amountValue > 0;
+  const accountsReady =
+    mode === 'transfer'
+      ? fromAccountId !== undefined && toAccountId !== undefined && fromAccountId !== toAccountId
+      : accountId !== undefined;
+  const canSubmit = amountValue > 0 && accountsReady;
 
   const submit = (close: () => void) => {
     if (!canSubmit) return;
-    onSubmit({ kind, amount: amountValue, description: description.trim(), categoryId, date });
+    const base = { amount: amountValue, description: description.trim(), date };
+    if (mode === 'transfer') {
+      if (!fromAccountId || !toAccountId) return;
+      onSubmit({ ...base, kind: 'transfer', fromAccountId, toAccountId });
+    } else {
+      if (!accountId) return;
+      onSubmit({ ...base, kind: mode, categoryId, accountId });
+    }
     close();
   };
+
+  const withAccount = mode !== 'transfer' && accounts.length > 0;
+
+  const amountField = (
+    <View style={[styles.field, withAccount && styles.flex]}>
+      <AppText variant={config.amountLabel} color="textSecondary">
+        Amount
+      </AppText>
+      <View style={[styles.box, styles.amountBox, withAccount && styles.amountBoxFill]}>
+        <AppText variant="amountInput" color="brand">
+          {CURRENCY_SYMBOL}
+        </AppText>
+        <TextInput
+          value={amount}
+          onChangeText={(text) => setAmount(formatAmountInput(text))}
+          placeholder="0.00"
+          placeholderTextColor={colors.textMuted}
+          keyboardType="decimal-pad"
+          selectionColor={colors.brand}
+          cursorColor={colors.brand}
+          accessibilityLabel="Amount"
+          autoFocus={false}
+          style={[styles.input, typography.amountInput]}
+        />
+      </View>
+    </View>
+  );
 
   return (
     <BottomSheet title="Add Transaction" onClose={onClose}>
       {(close) => (
         <>
-          <SegmentedControl options={KIND_OPTIONS} value={kind} onChange={changeKind} />
+          <SegmentedControl options={MODE_OPTIONS} value={mode} onChange={changeMode} />
 
-          <View style={styles.field}>
-            <AppText variant={config.labelVariant} color="textSecondary">
-              Amount
-            </AppText>
-            <View style={[styles.box, styles.amountBox]}>
-              <AppText variant="amountInput" color="brand">
-                {CURRENCY_SYMBOL}
-              </AppText>
-              <TextInput
-                value={amount}
-                onChangeText={(text) => setAmount(formatAmountInput(text))}
-                placeholder="0.00"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="decimal-pad"
-                selectionColor={colors.brand}
-                cursorColor={colors.brand}
-                accessibilityLabel="Amount"
-                autoFocus={false}
-                style={[styles.input, typography.amountInput]}
-              />
+          {/* Expenses and Income: the account sits beside the amount (Figma: 212pt + 10pt + 128pt). */}
+          {withAccount ? (
+            <View style={styles.amountRow}>
+              {amountField}
+              <View style={[styles.field, styles.accountField]}>
+                <AppText variant="fieldLabelSm" color="textSecondary">
+                  Account
+                </AppText>
+                <AccountPicker label="Account" accounts={accounts} value={accountId} onChange={setAccountId} />
+              </View>
             </View>
-          </View>
+          ) : (
+            amountField
+          )}
+
+          {mode === 'transfer' ? (
+            <View style={styles.transferRow}>
+              <View style={[styles.field, styles.flex]}>
+                <AppText variant="fieldLabelSm" color="textSecondary">
+                  From
+                </AppText>
+                <AccountPicker label="From account" accounts={accounts} value={fromAccountId} onChange={setFromAccountId} />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Swap accounts"
+                hitSlop={6}
+                onPress={swapAccounts}
+                style={({ pressed }) => [styles.direction, pressed && styles.pressed]}>
+                <Icon name="arrowRightTransfer" />
+              </Pressable>
+              <View style={[styles.field, styles.flex]}>
+                <AppText variant="fieldLabelSm" color="textSecondary">
+                  To
+                </AppText>
+                <AccountPicker label="To account" accounts={accounts} value={toAccountId} onChange={setToAccountId} />
+              </View>
+            </View>
+          ) : null}
+
+          {mode === 'transfer' && !canTransfer ? (
+            <AppText variant="caption" color="textSecondary">
+              Add another account to move money between them.
+            </AppText>
+          ) : null}
 
           <View style={styles.fieldsRow}>
             <View style={[styles.field, styles.flex]}>
-              <AppText variant={config.labelVariant} color="textSecondary">
-                {config.descriptionLabel}
+              <AppText variant={config.descriptionLabel} color="textSecondary">
+                Description
               </AppText>
               <View style={[styles.box, styles.smallBox]}>
                 <TextInput
@@ -124,7 +209,7 @@ export function AddTransactionSheet({ onClose, onSubmit }: Props) {
                   selectionColor={colors.brand}
                   cursorColor={colors.brand}
                   returnKeyType="done"
-                  accessibilityLabel={config.descriptionLabel}
+                  accessibilityLabel="Description"
                   numberOfLines={1}
                   style={[styles.input, typography.input]}
                 />
@@ -132,31 +217,45 @@ export function AddTransactionSheet({ onClose, onSubmit }: Props) {
             </View>
 
             <View style={[styles.field, styles.dateField]}>
-              <AppText variant={config.labelVariant} color="textSecondary">
+              <AppText variant={config.dateLabel} color="textSecondary">
                 Date
               </AppText>
-              <DatePickerField label="Date" value={date} onChange={setDate} maxDate={new Date()} style={styles.date} />
+              <DatePickerField
+                label="Date"
+                value={date}
+                onChange={setDate}
+                maxDate={new Date()}
+                icon={mode === 'transfer' ? 'calendarDaysSm' : 'calendarSm'}
+                style={[styles.date, mode === 'transfer' && styles.dateTransfer]}
+              />
             </View>
           </View>
 
-          <View style={styles.field}>
-            <AppText variant={config.labelVariant} color="textSecondary">
-              Select Category
-            </AppText>
-            <View accessibilityRole="radiogroup" style={styles.categories}>
-              {categories.map((category) => (
-                <CategoryChip
-                  key={category.id}
-                  category={category}
-                  selected={category.id === categoryId}
-                  onPress={() => setCategoryId(category.id)}
-                  labelVariant={config.chipLabelVariant}
-                />
-              ))}
+          {mode !== 'transfer' ? (
+            <View style={styles.field}>
+              <AppText variant="fieldLabel" color="textSecondary">
+                Select Category
+              </AppText>
+              <View accessibilityRole="radiogroup" style={styles.tiles}>
+                {(mode === 'expense' ? expenseCategories : incomeCategories).map((category) => (
+                  <CategoryTile
+                    key={category.id}
+                    label={category.label}
+                    artwork={category.artwork}
+                    selected={category.id === categoryId}
+                    onPress={() => setCategoryId(category.id)}
+                  />
+                ))}
+              </View>
             </View>
-          </View>
+          ) : null}
 
-          <SheetButton label={config.submitLabel} disabled={!canSubmit} onPress={() => submit(close)} />
+          <SheetButton
+            label={config.submitLabel}
+            disabled={!canSubmit}
+            onPress={() => submit(close)}
+            style={mode === 'transfer' && styles.transferButton}
+          />
         </>
       )}
     </BottomSheet>
@@ -174,17 +273,47 @@ const styles = StyleSheet.create({
   box: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: STROKE,
     borderColor: colors.border,
   },
   amountBox: {
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 12 - STROKE,
+    paddingVertical: 8 - STROKE,
     borderRadius: 14,
   },
+  // Stretches to the 54pt account selector beside it.
+  amountBoxFill: {
+    flex: 1,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 10,
+  },
+  accountField: {
+    width: 128,
+  },
+  transferRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  direction: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: colors.brandWashBorder,
+    backgroundColor: colors.brandWash,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
   smallBox: {
-    padding: 10,
+    padding: 10 - STROKE,
     borderRadius: 10,
   },
   input: {
@@ -203,11 +332,19 @@ const styles = StyleSheet.create({
   },
   date: {
     gap: 4,
-    padding: 10,
+    padding: 10 - STROKE,
   },
-  categories: {
+  dateTransfer: {
+    gap: 5,
+  },
+  transferButton: {
+    boxShadow: shadows.buttonSoft,
+  },
+  tiles: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    alignItems: 'flex-start',
+    columnGap: 10,
+    rowGap: 6,
   },
 });

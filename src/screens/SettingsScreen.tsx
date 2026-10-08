@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTabBarInset } from '@/components/navigation/BottomTabBar';
 import { ProfileCard, SettingsGroup, SettingsRow } from '@/components/settings';
 import { IconButton, ScreenHeader } from '@/components/ui';
+import { signOut } from '@/data/authStore';
 import { useProfile } from '@/data/profileStore';
 import { spacing } from '@/theme';
 
@@ -70,7 +71,7 @@ export function SettingsScreen() {
           </SettingsGroup>
 
           <SettingsGroup>
-            <SettingsRow icon="logOut" title="Sign out" destructive />
+            <SettingsRow icon="logOut" title="Sign out" destructive onPress={signOut} />
           </SettingsGroup>
         </View>
       </ScrollView>

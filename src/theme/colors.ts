@@ -25,6 +25,8 @@ export const colors = {
   surfaceMuted: '#F8FAFC',
   /** "Split equally" pill. */
   brandWash: '#E8F8F1',
+  /** Border of the transfer direction badge. */
+  brandWashBorder: '#BDE8D7',
   /** Avatar for a person who hasn't been named yet. */
   avatarEmpty: '#E8E8E8',
   black: '#000000',

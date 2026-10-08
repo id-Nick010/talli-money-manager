@@ -30,10 +30,28 @@ type Props = {
   mode?: 'radio' | 'checkbox';
 };
 
+/** Draws `artwork` cropped into its frame; place it inside a 40pt tile. */
+export function ArtworkFrame({ artwork }: { artwork: TileArtwork }) {
+  const { source, x, y, width, height, image } = artwork;
+  return (
+    <View pointerEvents="none" style={[styles.frame, { left: x, top: y, width, height }]}>
+      <Image
+        source={source}
+        contentFit="fill"
+        style={{
+          position: 'absolute',
+          left: image.left * width,
+          top: image.top * height,
+          width: image.width * width,
+          height: image.height * height,
+        }}
+      />
+    </View>
+  );
+}
+
 /** Illustrated choice tile used by the add-account and budget-setup pickers. */
 export function CategoryTile({ label, artwork, selected, onPress, mode = 'radio' }: Props) {
-  const { source, x, y, width, height, image } = artwork;
-
   return (
     <Pressable
       accessibilityRole={mode}
@@ -44,19 +62,7 @@ export function CategoryTile({ label, artwork, selected, onPress, mode = 'radio'
       <View style={styles.tileBox}>
         {/* The selection stroke sits on its own layer so the artwork never shifts when selected. */}
         <View style={[styles.tile, selected && styles.tileSelected]} />
-        <View style={[styles.frame, { left: x, top: y, width, height }]}>
-          <Image
-            source={source}
-            contentFit="fill"
-            style={{
-              position: 'absolute',
-              left: image.left * width,
-              top: image.top * height,
-              width: image.width * width,
-              height: image.height * height,
-            }}
-          />
-        </View>
+        <ArtworkFrame artwork={artwork} />
         {mode === 'checkbox' && selected ? (
           <View style={styles.check}>
             <Icon name="check" />

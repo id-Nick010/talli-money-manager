@@ -12,6 +12,8 @@ type Props = BottomTabBarProps & {
   /** Route names are split around the centre action button after this many tabs. */
   actionIndex: number;
   onPressAction: () => void;
+  /** Why the centre action can't be used yet; when set, the button is dimmed and inert. */
+  actionLockedHint?: string;
   /** Tabs that can't be opened yet (route name → what unlocks it); shown dimmed and inert. */
   locked?: ReadonlyMap<string, string>;
 };
@@ -24,7 +26,7 @@ export function useTabBarInset() {
   return TAB_BAR_HEIGHT + useSafeAreaInsets().bottom;
 }
 
-export function BottomTabBar({ state, navigation, tabs, actionIndex, onPressAction, locked }: Props) {
+export function BottomTabBar({ state, navigation, tabs, actionIndex, onPressAction, actionLockedHint, locked }: Props) {
   const insets = useSafeAreaInsets();
   const routes = state.routes.filter((route) => tabs[route.name]);
 
@@ -73,8 +75,15 @@ export function BottomTabBar({ state, navigation, tabs, actionIndex, onPressActi
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Add transaction"
+            accessibilityState={{ disabled: actionLockedHint !== undefined }}
+            accessibilityHint={actionLockedHint}
+            disabled={actionLockedHint !== undefined}
             onPress={onPressAction}
-            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}>
+            style={({ pressed }) => [
+              styles.action,
+              actionLockedHint !== undefined && styles.tabLocked,
+              pressed && styles.actionPressed,
+            ]}>
             <View style={styles.actionFill}>
               <BrandGradient />
             </View>

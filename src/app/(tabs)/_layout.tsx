@@ -7,6 +7,7 @@ import { BottomTabBar, type TabMeta } from '@/components/navigation/BottomTabBar
 import { settleTabDrag, TAB_TRANSITION, TabSwipeArea } from '@/components/navigation/TabSwipeArea';
 import { useLockedTabs } from '@/components/navigation/useLockedTabs';
 import { ScreenBackground } from '@/components/ui';
+import { useAccounts } from '@/data/accountsStore';
 
 type SceneStyleInterpolator = NonNullable<BottomTabNavigationOptions['sceneStyleInterpolator']>;
 
@@ -21,6 +22,8 @@ export default function TabsLayout() {
   const { width } = useWindowDimensions();
   const [drag] = useState(() => new Animated.Value(0));
   const locked = useLockedTabs();
+  // Every transaction belongs to an account, so adding one waits until an account exists.
+  const hasAccount = useAccounts().length > 0;
 
   // Swipe gestures are built once per screen, so they read the latest locks through a ref.
   const lockedRef = useRef(locked);
@@ -78,6 +81,7 @@ export default function TabsLayout() {
             actionIndex={2}
             locked={locked}
             onPressAction={() => router.push('/add-transaction')}
+            actionLockedHint={hasAccount ? undefined : 'Available after you add an account'}
           />
         )}>
         <Tabs.Screen name="(home)" />
