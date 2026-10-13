@@ -18,6 +18,8 @@ export function createValueStore<T>(initial: T) {
 
   return {
     useValue: () => useSyncExternalStore(subscribe, getSnapshot, getSnapshot),
+    /** The current value, for code outside React. */
+    getValue: getSnapshot,
     update: (changes: Partial<T>) => {
       value = { ...value, ...changes };
       listeners.forEach((listener) => listener());

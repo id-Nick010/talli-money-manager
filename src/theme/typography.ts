@@ -46,7 +46,8 @@ export const typography = {
   titleSm: { fontFamily: fonts.bodySemibold, fontSize: 14 },
   /** Empty-state headline — "Your money story starts here" */
   emptyTitle: { fontFamily: fonts.bodySemibold, fontSize: 15, lineHeight: 20, letterSpacing: -0.15 },
-  amountRow: { fontFamily: fonts.bodyBold, fontSize: 15 },
+  /** Transaction row amount — "+₱114.5" */
+  amountRow: { fontFamily: fonts.bodyMedium, fontSize: 15 },
 
   amountSm: { fontFamily: fonts.bodyMedium, fontSize: 13 },
   bodySm: { fontFamily: fonts.bodyRegular, fontSize: 13 },
@@ -111,6 +112,16 @@ export const typography = {
   consent: { fontFamily: fonts.bodyRegular, fontSize: 11, lineHeight: 16.5 },
   consentLink: { fontFamily: fonts.bodySemibold, fontSize: 11, lineHeight: 16.5 },
   buttonBody: { fontFamily: fonts.bodySemibold, fontSize: 14 },
+
+  /** Onboarding */
+  onboardingBody: { fontFamily: fonts.bodyRegular, fontSize: 14, lineHeight: 20.3 },
+  onboardingNote: { fontFamily: fonts.bodyRegular, fontSize: 12, lineHeight: 17.4 },
+  /** Feature choice card title — "Track transactions" */
+  /** Currency footer reassurance */
+  onboardingNoteMd: { fontFamily: fonts.bodyRegular, fontSize: 13, lineHeight: 18.85 },
+  /** Appearance step — "Preview coming soon" */
+  previewPlaceholder: { fontFamily: fonts.displaySemibold, fontSize: 11 },
+  choiceTitle: { fontFamily: fonts.bodySemibold, fontSize: 14, lineHeight: 20.3 },
 
   /** Emoji glyphs use the system emoji font, so only size is set. */
   emoji: { fontSize: 18, lineHeight: 22 },

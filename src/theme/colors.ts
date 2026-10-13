@@ -4,6 +4,8 @@ export const colors = {
   textMuted: '#94A3B8',
   surface: '#FFFFFF',
   border: '#E2E8F0',
+  /** Unselected radio ring. */
+  borderStrong: '#CBD5E1',
   track: '#F1F5F9',
   ringTrack: '#E1F0E9',
 
@@ -34,6 +36,12 @@ export const colors = {
   brandMint: '#E4F7EE',
   /** Dark brand green for text on `brandMint`. */
   brandDeep: '#087655',
+  /** Darkest brand green, for text on `brandMist`. */
+  brandInk: '#094734',
+  /** "Preview coming soon" tile on the appearance step. */
+  surfacePlaceholder: '#EEF3F1',
+  /** Pinned onboarding footer behind the currency list. */
+  brandMist: '#E2F2EE',
   /** Border of mint highlight cards (notifications summary). */
   brandMintBorder: '#CBEEDC',
   /** Profile form input fill. */

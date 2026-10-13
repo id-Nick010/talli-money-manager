@@ -3,14 +3,15 @@ import { useRef, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AccountCard, BudgetCard, DebtCard, HomeEmptyState, MonthHeader, TransactionRow } from '@/components/home';
+import { BalanceCard, BudgetCard, DebtCard, HomeEmptyState, MonthHeader, TransactionRow } from '@/components/home';
 import { useTabBarInset } from '@/components/navigation/BottomTabBar';
 import { HorizontalList, SectionHeader, StatCard } from '@/components/ui';
 import { useAccounts } from '@/data/accountsStore';
 import { useBills } from '@/data/billsStore';
 import { useBudgets } from '@/data/budgetsStore';
 import { isSettled } from '@/components/bills';
-import { currentMonth, monthlySummary, recentTransactions } from '@/data/mock';
+import { currentMonth } from '@/data/mock';
+import { useMonthlySummary, useTransactions } from '@/data/transactionsStore';
 import { spacing } from '@/theme';
 
 type SectionProps = { title: string; gap: number; onPress?: () => void; children: ReactNode };
@@ -28,6 +29,9 @@ function Section({ title, gap, onPress = () => {}, children }: SectionProps) {
 
 const openAccounts = () => router.navigate('/accounts');
 
+/** How many of the latest transactions Home lists. */
+const RECENT_LIMIT = 5;
+
 /** Opens a bill's detail page inside the Bills tab. */
 const openBill = (id: string) => router.navigate({ pathname: '/bills/[id]', params: { id } });
 
@@ -39,10 +43,13 @@ export function HomeScreen() {
   const accounts = useAccounts();
   const budgets = useBudgets();
   const bills = useBills();
-  const { income, expenses } = monthlySummary;
-  // Until the user has transactions, home keeps the getting-started layout (which also covers
-  // brand-new users without an account, and shows any budgets and bills they've set up).
-  const isGettingStarted = accounts.length === 0 || recentTransactions.length === 0;
+  const transactions = useTransactions();
+  const summary = useMonthlySummary();
+  const { income, expenses } = summary;
+  // Home keeps the getting-started layout until every section has something to show; it lists
+  // transactions as they're added and keeps setup cards for budgets and bills not set up yet.
+  const isGettingStarted =
+    accounts.length === 0 || transactions.length === 0 || budgets.length === 0 || bills.length === 0;
 
   return (
     <View style={styles.screen}>
@@ -54,10 +61,11 @@ export function HomeScreen() {
 
         {isGettingStarted ? (
           <HomeEmptyState
-            summary={monthlySummary}
+            summary={summary}
             accounts={accounts}
             budgets={budgets}
             bills={bills}
+            transactions={transactions}
             onAddAccount={() => router.push('/add-account')}
             onOpenAccounts={openAccounts}
             onSetUpBudget={() => router.push('/budget-setup')}
@@ -77,8 +85,8 @@ export function HomeScreen() {
 
             <Section title="My Accounts" gap={12} onPress={openAccounts}>
               <HorizontalList>
-                {accounts.map((account) => (
-                  <AccountCard key={account.id} account={account} />
+                {accounts.map((account, index) => (
+                  <BalanceCard key={account.id} account={account} isDefault={index === 0} />
                 ))}
               </HorizontalList>
             </Section>
@@ -102,7 +110,7 @@ export function HomeScreen() {
 
               <Section title="Recent Transactions" gap={14}>
                 <View style={[styles.gutter, styles.transactions]}>
-                  {recentTransactions.map((transaction) => (
+                  {transactions.slice(0, RECENT_LIMIT).map((transaction) => (
                     <TransactionRow key={transaction.id} transaction={transaction} />
                   ))}
                 </View>

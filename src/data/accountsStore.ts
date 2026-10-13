@@ -5,6 +5,7 @@ import type { Account } from './types';
 const store = createListStore<Account>(initialAccounts);
 
 export const useAccounts = store.useItems;
+export const getAccounts = store.getItems;
 
 export type NewAccount = Omit<Account, 'id'>;
 

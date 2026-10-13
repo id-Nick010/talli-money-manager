@@ -11,3 +11,11 @@ export type ProfileDetails = Pick<Profile, 'name' | 'email' | 'phone' | 'birthda
 export function updateProfile(details: Partial<ProfileDetails>) {
   store.update(details);
 }
+
+export function setCurrency(currency: Profile['currency']) {
+  store.update({ currency });
+}
+
+export function setAppearance(appearance: Profile['appearance']) {
+  store.update({ appearance });
+}

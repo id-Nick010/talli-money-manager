@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AuthInput, AuthLayout, Checkbox, PillButton, SocialSignIn, SwitchPrompt } from '@/components/auth';
 import { AppText } from '@/components/ui';
-import { signIn } from '@/data/authStore';
+import { signUp } from '@/data/authStore';
 import { updateProfile } from '@/data/profileStore';
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
@@ -39,8 +39,8 @@ export function SignUpScreen() {
     setAttempted(true);
     if (Object.keys(validate(name, email, password, confirm, agreed)).length > 0) return;
     updateProfile({ name: name.trim(), email: email.trim() });
-    // Signing in unlocks the app; the protected routes then move to the dashboard.
-    signIn();
+    // Signing up unlocks the app; the protected routes then move to onboarding.
+    signUp();
   };
 
   return (

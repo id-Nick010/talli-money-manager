@@ -18,6 +18,8 @@ export function createListStore<T>(initial: T[]) {
 
   return {
     useItems: () => useSyncExternalStore(subscribe, getSnapshot, getSnapshot),
+    /** The current items, for code outside React (e.g. saving a form). */
+    getItems: getSnapshot,
     add: (...added: T[]) => {
       items = [...items, ...added];
       listeners.forEach((listener) => listener());

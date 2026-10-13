@@ -1,6 +1,7 @@
 import type { ImageSource } from 'expo-image';
 
 import type { AvatarData } from '@/components/ui/Avatar';
+import type { TileArtwork } from '@/components/ui/CategoryTile';
 import type { IconName } from '@/components/ui/Icon';
 
 export type MonthlySummary = {
@@ -67,13 +68,17 @@ export type TransactionKind = 'income' | 'expense';
 export type Transaction = {
   id: string;
   title: string;
-  /** Human-readable relative date, e.g. "Today". */
-  dateLabel: string;
+  date: Date;
+  /** The account it was paid from or into, shown as "@ Main Account". */
+  accountName: string;
   /** Signed amount: positive = money in, negative = money out. */
   amount: number;
-  icon: { type: 'icon'; name: IconName } | { type: 'artwork'; source: ImageSource | number };
-  /** Tint of the icon tile. */
-  tone: 'success' | 'danger';
+  icon:
+    | { type: 'icon'; name: IconName }
+    /** Full illustration that bleeds past the 40pt tile. */
+    | { type: 'artwork'; source: ImageSource | number }
+    /** A category illustration cropped into the tile, as in the Add Transaction sheet. */
+    | { type: 'tile'; artwork: TileArtwork };
 };
 
 /** The signed-in user's profile and app preferences. */

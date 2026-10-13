@@ -3,21 +3,23 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText, Card } from '@/components/ui';
 import type { Account } from '@/data/types';
-import { colors } from '@/theme';
+import { colors, radii } from '@/theme';
 import { formatCurrency } from '@/utils/format';
 
 /** Figma keeps the 1pt stroke out of the padding; React Native pads inside the border. */
 const STROKE = 1;
-const CARD_HEIGHT = 88;
+const PADDING = 14;
+/** Where Figma puts the "Default" badge, from the card's outer edge. */
+const BADGE_LEFT = 148;
 
 type Props = {
   account: Account;
-  /** The account new transactions go to by default; shows the badge and wallet artwork. */
+  /** The account new transactions go to by default; shows the "Default" badge. */
   isDefault?: boolean;
   onPress?: () => void;
 };
 
-/** Account card in the getting-started home's accounts row. */
+/** Account card in Home's "My Accounts" row: name, balance and the wallet artwork. */
 export function BalanceCard({ account, isDefault, onPress }: Props) {
   const { name, balance } = account;
   const balanceLabel = formatCurrency(balance, { decimals: 2 });
@@ -26,22 +28,21 @@ export function BalanceCard({ account, isDefault, onPress }: Props) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${name}, balance ${balanceLabel}${isDefault ? ', default account' : ''}`}
+      disabled={!onPress}
       onPress={onPress}
       style={({ pressed }) => pressed && styles.pressed}>
       <Card
-        radius={20}
+        radius={radii.xxl}
         shadow="cardRaised"
         style={styles.card}
         backdrop={
-          isDefault ? (
-            <Image source={require('@/assets/images/account-card-wallet.png')} contentFit="cover" style={styles.wallet} />
-          ) : undefined
+          <Image source={require('@/assets/images/account-card-wallet.png')} contentFit="cover" style={styles.wallet} />
         }>
-        <View style={[styles.top, isDefault && styles.topBesideArt]}>
-          <AppText variant="overline" color="textSecondary" numberOfLines={1} style={styles.name}>
+        <View style={styles.top}>
+          <AppText variant="overline" color="textSecondary" numberOfLines={1}>
             {name}
           </AppText>
-          <AppText variant="amountLg" numberOfLines={1} adjustsFontSizeToFit style={styles.balance}>
+          <AppText variant="amountLg" numberOfLines={1} adjustsFontSizeToFit>
             {balanceLabel}
           </AppText>
         </View>
@@ -63,35 +64,25 @@ const styles = StyleSheet.create({
   },
   card: {
     width: 220,
-    height: CARD_HEIGHT,
-    justifyContent: 'center',
-    padding: 14 - STROKE,
+    padding: PADDING - STROKE,
   },
   top: {
     gap: 2,
+    // Keeps long names and balances clear of the badge.
+    maxWidth: BADGE_LEFT - PADDING * 2,
   },
-  // Keeps long names and balances clear of the wallet artwork and badge.
-  topBesideArt: {
-    marginRight: 64,
-  },
-  name: {
-    lineHeight: 15,
-  },
-  balance: {
-    lineHeight: 24,
-  },
-  // Artwork and badge are positioned in the card's padding box, as in Figma.
+  // Artwork and badge sit inside the border, so Figma's offsets lose the 1pt stroke.
   wallet: {
     position: 'absolute',
-    left: 63,
-    top: -7,
-    width: 175,
-    height: 116,
+    left: 84 - STROKE,
+    top: -6 - STROKE,
+    width: 145,
+    height: 96,
   },
   badge: {
     position: 'absolute',
-    left: 148,
-    top: 13,
+    left: BADGE_LEFT - STROKE,
+    top: 13 - STROKE,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,

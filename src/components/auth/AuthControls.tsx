@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText, BrandGradient, Icon } from '@/components/ui';
+import { AppText, BrandGradient, Icon, type IconName } from '@/components/ui';
 import { colors, radii, shadows } from '@/theme';
 
 /** Figma keeps the 1pt stroke out of the padding; React Native pads inside the border. */
@@ -38,10 +38,12 @@ export function Checkbox({ checked, onChange, accessibilityLabel, children, gap,
 type PillButtonProps = {
   label: string;
   onPress: () => void;
+  /** Trailing arrow; onboarding uses a slightly lighter stroke than the auth screens. */
+  icon?: IconName;
 };
 
 /** Full-width gradient pill with a trailing arrow — the screens' main action. */
-export function PillButton({ label, onPress }: PillButtonProps) {
+export function PillButton({ label, onPress, icon = 'arrowRightWhite' }: PillButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -53,7 +55,7 @@ export function PillButton({ label, onPress }: PillButtonProps) {
       <AppText variant="buttonBody" color="white">
         {label}
       </AppText>
-      <Icon name="arrowRightWhite" />
+      <Icon name={icon} />
     </Pressable>
   );
 }

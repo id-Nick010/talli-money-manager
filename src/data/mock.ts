@@ -150,26 +150,35 @@ export const billActivity: Record<string, BillActivity[]> = {
 
 const subscriptionArtwork = require('@/assets/images/tx-subscription.png');
 
+const daysAgo = (days: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate() - days);
+
 const demoTransactions: Transaction[] = [
   {
     id: 'tx-1',
     title: 'Spotify Premium',
-    dateLabel: 'Today',
+    date: daysAgo(0),
+    accountName: 'Main Account',
     amount: -114.5,
     icon: { type: 'artwork', source: subscriptionArtwork },
-    tone: 'success',
   },
   {
     id: 'tx-2',
     title: 'Spotify Premium',
-    dateLabel: 'Today',
+    date: daysAgo(0),
+    accountName: 'Main Account',
     amount: -114.5,
     icon: { type: 'artwork', source: subscriptionArtwork },
-    tone: 'success',
   },
-  { id: 'tx-3', title: 'Transfer from Jake', dateLabel: 'Yesterday', amount: 45, icon: { type: 'icon', name: 'arrowDown' }, tone: 'success' },
-  { id: 'tx-4', title: 'Uber Ride', dateLabel: 'Yesterday', amount: -18.5, icon: { type: 'icon', name: 'car' }, tone: 'danger' },
-  { id: 'tx-5', title: 'Amazon', dateLabel: '2 days ago', amount: -34.99, icon: { type: 'icon', name: 'package' }, tone: 'danger' },
+  {
+    id: 'tx-3',
+    title: 'Transfer from Jake',
+    date: daysAgo(1),
+    accountName: 'Main Account',
+    amount: 45,
+    icon: { type: 'icon', name: 'arrowDown' },
+  },
+  { id: 'tx-4', title: 'Uber Ride', date: daysAgo(1), accountName: 'Main Account', amount: -18.5, icon: { type: 'icon', name: 'car' } },
+  { id: 'tx-5', title: 'Amazon', date: daysAgo(2), accountName: 'Savings', amount: -34.99, icon: { type: 'icon', name: 'package' } },
 ];
 
 export const accounts: Account[] = SIMULATE_NEW_USER ? [] : demoAccounts;

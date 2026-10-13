@@ -1,15 +1,33 @@
 import { Image } from 'expo-image';
-import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText, BrandGradient, Card, HorizontalList, Icon, SectionHeader, StatCard } from '@/components/ui';
-import type { Account, Budget, MonthlySummary, SharedDebt } from '@/data/types';
+import {
+  AppText,
+  BrandGradient,
+  Card,
+  HorizontalList,
+  Icon,
+  SectionHeader,
+  StatCard,
+  useReduceMotion,
+} from '@/components/ui';
+import type { Account, Budget, MonthlySummary, SharedDebt, Transaction } from '@/data/types';
 import { colors, radii, shadows, spacing } from '@/theme';
 
 import { AddCard } from './AddCard';
 import { BalanceCard } from './BalanceCard';
 import { BudgetCard } from './BudgetCard';
 import { DebtCard } from './DebtCard';
+import { TransactionRow } from './TransactionRow';
+
+/** How many of the latest transactions are listed. */
+const RECENT_LIMIT = 5;
+
+/** The add-account button gently grows to this scale and back so a new user spots it. */
+const PULSE_SCALE = 1.04;
+const PULSE_MS = 600;
+const PULSE_PAUSE_MS = 1200;
 
 /** The add-account button's Figma gradient (≈174°) in the button's own bounding box. */
 const BUTTON_GRADIENT_VECTOR = { x1: 0.4873, y1: -0.3705, x2: 0.5127, y2: 1.3705 } as const;
@@ -28,6 +46,8 @@ type Props = {
   budgets: Budget[];
   /** Shared bills added so far; replace the setup card once there are any. */
   bills: SharedDebt[];
+  /** Latest first; replace the placeholder once there are any. */
+  transactions: Transaction[];
   onAddAccount?: () => void;
   onOpenAccounts?: () => void;
   onSetUpBudget?: () => void;
@@ -47,6 +67,7 @@ export function HomeEmptyState({
   accounts,
   budgets,
   bills,
+  transactions,
   onAddAccount,
   onOpenAccounts,
   onSetUpBudget,
@@ -143,31 +164,41 @@ export function HomeEmptyState({
 
       <View style={styles.section}>
         <SectionHeader title="Recent Transactions" />
-        <View style={styles.transactionsRow}>
-          <View style={styles.transactionsTile}>
-            <View style={styles.transactionsArtFrame}>
-              <Image
-                source={require('@/assets/images/empty-transactions.png')}
-                contentFit="cover"
-                style={styles.transactionsArt}
-              />
+        {transactions.length > 0 ? (
+          <View style={styles.transactionList}>
+            {transactions.slice(0, RECENT_LIMIT).map((transaction) => (
+              <TransactionRow key={transaction.id} transaction={transaction} />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.transactionsRow}>
+            <View style={styles.transactionsTile}>
+              <View style={styles.transactionsArtFrame}>
+                <Image
+                  source={require('@/assets/images/empty-transactions.png')}
+                  contentFit="cover"
+                  style={styles.transactionsArt}
+                />
+              </View>
+            </View>
+            <View style={styles.transactionsCopy}>
+              <AppText variant="titleSm" style={styles.transactionsTitle}>
+                Your transactions will be shown here
+              </AppText>
+              <AppText variant="caption" color="textSecondary" style={styles.transactionsBody}>
+                {hasAccount ? 'Tap + to log your first transaction.' : 'Add an account first to track transactions.'}
+              </AppText>
             </View>
           </View>
-          <View style={styles.transactionsCopy}>
-            <AppText variant="titleSm" style={styles.transactionsTitle}>
-              Your transactions will be shown here
-            </AppText>
-            <AppText variant="caption" color="textSecondary" style={styles.transactionsBody}>
-              {hasAccount ? 'Tap + to log your first transaction.' : 'Add an account first to track transactions.'}
-            </AppText>
-          </View>
-        </View>
+        )}
       </View>
     </View>
   );
 }
 
 function AccountsEmptyCard({ onAddAccount }: { onAddAccount?: () => void }) {
+  const pulse = usePulse();
+
   return (
     <Card
       shadow="cardSoft"
@@ -185,20 +216,57 @@ function AccountsEmptyCard({ onAddAccount }: { onAddAccount?: () => void }) {
         </AppText>
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={onAddAccount}
-        style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>
-        <View style={styles.addButtonFill}>
-          <BrandGradient vector={BUTTON_GRADIENT_VECTOR} />
-        </View>
-        <Icon name="plusSm" />
-        <AppText variant="labelSemiboldMd" color="white">
-          Add your first account
-        </AppText>
-      </Pressable>
+      <Animated.View style={{ transform: [{ scale: pulse }] }}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onAddAccount}
+          style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}>
+          <View style={styles.addButtonFill}>
+            <BrandGradient vector={BUTTON_GRADIENT_VECTOR} />
+          </View>
+          <Icon name="plusSm" />
+          <AppText variant="labelSemiboldMd" color="white">
+            Add your first account
+          </AppText>
+        </Pressable>
+      </Animated.View>
     </Card>
   );
+}
+
+/** A slow, slight grow-and-settle on repeat; holds still while Reduce Motion is on. */
+function usePulse() {
+  const reduceMotion = useReduceMotion();
+  const [scale] = useState(() => new Animated.Value(1));
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    const ease = Easing.inOut(Easing.sin);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: PULSE_SCALE,
+          duration: PULSE_MS,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: PULSE_MS,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.delay(PULSE_PAUSE_MS),
+      ]),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+      scale.setValue(1);
+    };
+  }, [reduceMotion, scale]);
+
+  return scale;
 }
 
 type SetupSectionProps = {
@@ -367,6 +435,9 @@ const styles = StyleSheet.create({
     height: 154.482,
   },
 
+  transactionList: {
+    gap: 8,
+  },
   transactionsRow: {
     flexDirection: 'row',
     alignItems: 'center',

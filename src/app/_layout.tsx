@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
-import { useSignedIn } from '@/data/authStore';
+import { useOnboarding, useSignedIn } from '@/data/authStore';
 import { fonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -34,6 +34,7 @@ export default function RootLayout() {
   });
 
   const signedIn = useSignedIn();
+  const onboarding = useOnboarding();
 
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync();
@@ -46,7 +47,11 @@ export default function RootLayout() {
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
         {/* Signing in or out swaps which group is reachable; the router moves to the first open screen. */}
-        <Stack.Protected guard={signedIn}>
+        {/* A new account sees onboarding first; finishing it opens the dashboard. */}
+        <Stack.Protected guard={signedIn && onboarding}>
+          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !onboarding}>
           <Stack.Screen name="(tabs)" />
           {/* Sheets draw their own scrim and slide-up animation over the current tab. */}
           <Stack.Screen name="add-transaction" options={sheetOptions} />

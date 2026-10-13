@@ -5,12 +5,14 @@ type FormatOptions = {
   decimals?: number;
   /** Prefix positive values with "+" (negatives always get "-"). */
   signed?: boolean;
+  /** Drop trailing zeros in the cents, e.g. "₱114.5" and "₱229" (ignored when `decimals` is set). */
+  trim?: boolean;
 };
 
-export function formatCurrency(amount: number, { decimals, signed = false }: FormatOptions = {}) {
+export function formatCurrency(amount: number, { decimals, signed = false, trim = false }: FormatOptions = {}) {
   const digits = decimals ?? (Number.isInteger(amount) ? 0 : 2);
   const formatted = Math.abs(amount).toLocaleString('en-US', {
-    minimumFractionDigits: digits,
+    minimumFractionDigits: trim && decimals === undefined ? 0 : digits,
     maximumFractionDigits: digits,
   });
   const sign = amount < 0 ? '-' : signed && amount > 0 ? '+' : '';
