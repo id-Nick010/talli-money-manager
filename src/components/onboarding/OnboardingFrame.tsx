@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText, Icon, ScreenBackground } from '@/components/ui';
 import { finishOnboarding } from '@/data/authStore';
+import { usePreferences } from '@/data/preferencesStore';
+import { useProfile } from '@/data/profileStore';
 import { colors, radii, spacing } from '@/theme';
 
 /** Figma keeps the 1pt stroke out of the padding; React Native pads inside the border. */
@@ -29,6 +31,10 @@ type Props = {
 /** Shared frame of the onboarding steps: backdrop, back button and Skip, then the page and its action. */
 export function OnboardingFrame({ onBack, children, footer, footerGap = 20, pageGap = 24, fixed = false }: Props) {
   const insets = useSafeAreaInsets();
+  const { currency, appearance } = useProfile();
+  const { primaryFeature } = usePreferences();
+  // Skipping keeps whatever the earlier steps already chose (or the defaults).
+  const skip = () => finishOnboarding({ currency, appearance, primaryFeature });
 
   const body = (
     <>
@@ -44,7 +50,7 @@ export function OnboardingFrame({ onBack, children, footer, footerGap = 20, page
         <Pressable
           accessibilityRole="button"
           hitSlop={12}
-          onPress={finishOnboarding}
+          onPress={skip}
           style={({ pressed }) => pressed && styles.pressed}>
           <AppText variant="labelSemibold" color="brand">
             Skip

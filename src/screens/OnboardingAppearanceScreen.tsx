@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-
+import { usePreferences } from '@/data/preferencesStore';
 import { PillButton } from '@/components/auth';
 import { AppearanceChoice, AppearancePlaceholder, FooterNote, OnboardingFrame } from '@/components/onboarding';
 import { AppText } from '@/components/ui';
@@ -16,16 +16,20 @@ const APPEARANCES = [
 type Appearance = (typeof APPEARANCES)[number]['id'];
 
 export function OnboardingAppearanceScreen() {
-  const current = useProfile().appearance;
-  const [selected, setSelected] = useState<Appearance>(current === 'Dark' ? 'Dark' : 'Light');
+  const profile = useProfile();
+  const { primaryFeature } = usePreferences();
+  const [selected, setSelected] = useState<Appearance>(profile.appearance === 'Dark' ? 'Dark' : 'Light');
+  const [saving, setSaving] = useState(false);
 
   // TODO: the app only draws its light theme so far; this saves the choice for when Dark lands.
-  // Open the next onboarding step once it's designed; until then this finishes onboarding and the
-  // protected routes move to the dashboard.
-  const next = () => {
+  // Saving marks onboarding done in public.users, and the protected routes move to the dashboard.
+  const next = async () => {
     setAppearance(selected);
-    finishOnboarding();
+    setSaving(true);
+    await finishOnboarding({ currency: profile.currency, appearance: selected, primaryFeature });
+    setSaving(false);
   };
+
 
   return (
     <OnboardingFrame
@@ -34,7 +38,7 @@ export function OnboardingAppearanceScreen() {
       footer={
         <View style={styles.next}>
           <FooterNote>You can change your appearance anytime in Settings.</FooterNote>
-          <PillButton label={`Use ${selected} and continue`} icon="onboardingArrowRight" onPress={next} />
+          <PillButton label={`Use ${selected} and continue`} icon="onboardingArrowRight" onPress={next} loading={saving} />
         </View>
       }>
       <View style={styles.page}>

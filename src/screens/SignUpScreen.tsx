@@ -5,7 +5,6 @@ import { StyleSheet, View } from 'react-native';
 import { AuthInput, AuthLayout, Checkbox, PillButton, SocialSignIn, SwitchPrompt } from '@/components/auth';
 import { AppText } from '@/components/ui';
 import { signUp } from '@/data/authStore';
-import { updateProfile } from '@/data/profileStore';
 
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 const MIN_PASSWORD = 8;
@@ -25,7 +24,7 @@ function validate(name: string, email: string, password: string, confirm: string
 // TODO: Google/Apple sign-in and the Terms/Privacy pages once auth and legal copy exist.
 const notAvailableYet = () => {};
 
-export function SignUpScreen() {
+export function  SignUpScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,12 +34,17 @@ export function SignUpScreen() {
   const [attempted, setAttempted] = useState(false);
   const errors = attempted ? validate(name, email, password, confirm, agreed) : {};
 
-  const createAccount = () => {
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const createAccount = async () => {
     setAttempted(true);
+    setServerError(null);
     if (Object.keys(validate(name, email, password, confirm, agreed)).length > 0) return;
-    updateProfile({ name: name.trim(), email: email.trim() });
-    // Signing up unlocks the app; the protected routes then move to onboarding.
-    signUp();
+    setSubmitting(true);
+    // On success, the session arrives and the protected routes move to onboarding.
+    setServerError(await signUp(name.trim(), email.trim(), password));
+    setSubmitting(false);
   };
 
   return (
@@ -117,7 +121,12 @@ export function SignUpScreen() {
               {errors.consent}
             </AppText>
           ) : null}
-          <PillButton label="Create account" onPress={createAccount} />
+          {serverError ? (
+            <AppText variant="captionSm" color="danger" accessibilityLiveRegion="polite">
+              {serverError}
+            </AppText>
+          ) : null}
+          <PillButton label="Create account" onPress={createAccount} loading={submitting} />
         </View>
       </View>
 

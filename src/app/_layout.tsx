@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
-import { useOnboarding, useSignedIn } from '@/data/authStore';
+import { useAuthReady, useOnboarding, useSignedIn } from '@/data/authStore';
 import { fonts } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -35,12 +35,16 @@ export default function RootLayout() {
 
   const signedIn = useSignedIn();
   const onboarding = useOnboarding();
+  const authReady = useAuthReady();
 
   useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
+    if ((loaded || error) && authReady) SplashScreen.hideAsync();
+  }, [loaded, error, authReady]);
 
-  if (!loaded && !error) return null;
+  // Stay on the splash until fonts and the saved session are both ready, so a signed-in user
+  // never sees Sign up for a frame.
+  if ((!loaded && !error) || !authReady) return null;
+
 
   return (
     <>

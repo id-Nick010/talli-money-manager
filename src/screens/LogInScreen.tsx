@@ -27,12 +27,19 @@ export function LogInScreen() {
   const [attempted, setAttempted] = useState(false);
   const errors = attempted ? validate(email, password) : {};
 
-  // Demo only: any well-formed email and password signs in; there is no account check yet.
-  const logIn = () => {
+  const [submitting, setSubmitting] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const logIn = async () => {
     setAttempted(true);
+    setServerError(null);
     if (Object.keys(validate(email, password)).length > 0) return;
-    signIn();
+    setSubmitting(true);
+    // On success, the session arrives and the protected routes move to the dashboard.
+    setServerError(await signIn(email.trim(), password));
+    setSubmitting(false);
   };
+
 
   return (
     <AuthLayout title="Welcome back." subtitle="Let’s pick up your money story." gap={40} paddingTop={12}>
@@ -75,7 +82,12 @@ export function LogInScreen() {
           </Pressable>
         </View>
 
-        <PillButton label="Log in" onPress={logIn} />
+        {serverError ? (
+          <AppText variant="captionSm" color="danger" accessibilityLiveRegion="polite">
+            {serverError}
+          </AppText>
+        ) : null}
+        <PillButton label="Log in" onPress={logIn} loading={submitting} />
       </View>
 
       <SocialSignIn variant="log-in" onPressGoogle={notAvailableYet} onPressApple={notAvailableYet} />

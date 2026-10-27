@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { AppText, BrandGradient, Icon, type IconName } from '@/components/ui';
 import { colors, radii, shadows } from '@/theme';
 
@@ -40,13 +39,17 @@ type PillButtonProps = {
   onPress: () => void;
   /** Trailing arrow; onboarding uses a slightly lighter stroke than the auth screens. */
   icon?: IconName;
+  /** Swaps the arrow for a spinner and ignores taps while a request runs. */
+  loading?: boolean;
 };
 
 /** Full-width gradient pill with a trailing arrow — the screens' main action. */
-export function PillButton({ label, onPress, icon = 'arrowRightWhite' }: PillButtonProps) {
+export function PillButton({ label, onPress, icon = 'arrowRightWhite', loading = false }: PillButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled: loading, busy: loading }}
+      disabled={loading}
       onPress={onPress}
       style={({ pressed }) => [styles.pill, pressed && styles.pillPressed]}>
       <View style={styles.pillFill}>
@@ -55,10 +58,11 @@ export function PillButton({ label, onPress, icon = 'arrowRightWhite' }: PillBut
       <AppText variant="buttonBody" color="white">
         {label}
       </AppText>
-      <Icon name={icon} />
+      {loading ? <ActivityIndicator size="small" color={colors.white} /> : <Icon name={icon} />}
     </Pressable>
   );
 }
+
 
 type SocialSignInProps = {
   /** Sign up draws a 20pt-tall Apple mark; Log in a 17pt one. */
