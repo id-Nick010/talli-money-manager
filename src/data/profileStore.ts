@@ -2,7 +2,9 @@ import { createValueStore } from './createValueStore';
 import { currentUser } from './mock';
 import type { Profile } from './types';
 
-const store = createValueStore<Profile>(currentUser);
+// Name and email come from Supabase once the session loads; the rest stays demo data for now.
+const store = createValueStore<Profile>({ ...currentUser, name: '', email: '' });
+
 
 export const useProfile = store.useValue;
 
