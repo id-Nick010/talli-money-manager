@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
 
+import { clearAccounts, loadAccounts } from './accountsStore';
 import { createValueStore } from './createValueStore';
 import { setPrimaryFeature, type PrimaryFeature } from './preferencesStore';
 import { setAppearance, setCurrency, updateProfile } from './profileStore';
@@ -31,6 +32,7 @@ export const getUserId = () => store.getValue().userId;
 
 async function applySession(session: Session | null) {
   if (!session) {
+    clearAccounts();
     store.update({ ready: true, session: null, userId: null, onboarding: false });
     return;
   }
@@ -54,6 +56,8 @@ async function applySession(session: Session | null) {
     setCurrency(data.currency);
     setAppearance(data.appearance);
     if (data.primary_feature) setPrimaryFeature(data.primary_feature as PrimaryFeature);
+    // Loaded before the guards open the dashboard, so it doesn't flash the getting-started state.
+    await loadAccounts();
   }
 
   // Session and onboarding change together, so the router never shows the tabs for a frame first.

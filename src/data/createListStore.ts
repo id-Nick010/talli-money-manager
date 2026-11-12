@@ -24,5 +24,10 @@ export function createListStore<T>(initial: T[]) {
       items = [...items, ...added];
       listeners.forEach((listener) => listener());
     },
+    /** Replaces every item, e.g. with rows just loaded from the database. */
+    set: (next: T[]) => {
+      items = next;
+      listeners.forEach((listener) => listener());
+    },
   };
 }

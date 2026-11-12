@@ -5,7 +5,6 @@ import { addAccount } from '@/data/accountsStore';
 
 const close = () => router.back();
 
-// Demo only: kept in memory until the real database is wired up.
 const save = ({ name, description, initialBalance, typeId }: AccountDraft) =>
   addAccount({ name, description: description || undefined, balance: initialBalance, typeId });
 

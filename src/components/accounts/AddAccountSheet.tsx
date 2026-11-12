@@ -19,7 +19,8 @@ export type AccountDraft = {
 type Props = {
   /** Called once the dismiss animation finishes. Keep it referentially stable. */
   onClose: () => void;
-  onSubmit: (draft: AccountDraft) => void;
+  /** Resolves to an error message to show, or null once saved. */
+  onSubmit: (draft: AccountDraft) => Promise<string | null>;
 };
 
 export function AddAccountSheet({ onClose, onSubmit }: Props) {
@@ -27,13 +28,25 @@ export function AddAccountSheet({ onClose, onSubmit }: Props) {
   const [description, setDescription] = useState('');
   const [balance, setBalance] = useState('');
   const [typeId, setTypeId] = useState(accountTypes[0].id);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const canSubmit = name.trim().length > 0;
+  const canSubmit = name.trim().length > 0 && !saving;
 
-  const submit = (close: () => void) => {
+  // The sheet stays open until the account is saved, so a failed save keeps what was typed.
+  const submit = async (close: () => void) => {
     if (!canSubmit) return;
-    onSubmit({ name: name.trim(), description: description.trim(), initialBalance: parseAmount(balance), typeId });
-    close();
+    setSaving(true);
+    setSaveError(null);
+    const error = await onSubmit({
+      name: name.trim(),
+      description: description.trim(),
+      initialBalance: parseAmount(balance),
+      typeId,
+    });
+    setSaving(false);
+    if (error) setSaveError(error);
+    else close();
   };
 
   return (
@@ -119,7 +132,12 @@ export function AddAccountSheet({ onClose, onSubmit }: Props) {
             </View>
           </View>
 
-          <SheetButton label="Add Account" disabled={!canSubmit} onPress={() => submit(close)} />
+          {saveError ? (
+            <AppText variant="captionSm" color="danger" accessibilityLiveRegion="polite">
+              {saveError}
+            </AppText>
+          ) : null}
+          <SheetButton label={saving ? 'Adding…' : 'Add Account'} disabled={!canSubmit} onPress={() => submit(close)} />
         </>
       )}
     </BottomSheet>

@@ -1,7 +1,6 @@
 import type { AvatarData } from '@/components/ui/Avatar';
 
 import type {
-  Account,
   BillActivity,
   BillsSummary,
   Budget,
@@ -71,18 +70,6 @@ export const monthlySummary: MonthlySummary = SIMULATE_NEW_USER
       income: 5200,
       expenses: 2340,
     };
-
-const demoAccounts: Account[] = [
-  {
-    id: 'main',
-    name: 'Main Account',
-    balance: 4280.5,
-    last4: '4820',
-    artwork: require('@/assets/images/wallet-illustration.png'),
-  },
-  { id: 'savings', name: 'Savings', balance: 12750, last4: '4820', typeId: 'savings' },
-  { id: 'investment', name: 'Investment', balance: 3420.8, last4: '4820' },
-];
 
 const demoBudgets: Budget[] = [
   { id: 'food', category: 'Food & Dining', spent: 340, limit: 500 },
@@ -181,7 +168,6 @@ const demoTransactions: Transaction[] = [
   { id: 'tx-5', title: 'Amazon', date: daysAgo(2), accountName: 'Savings', amount: -34.99, icon: { type: 'icon', name: 'package' } },
 ];
 
-export const accounts: Account[] = SIMULATE_NEW_USER ? [] : demoAccounts;
 export const budgets: Budget[] = SIMULATE_NEW_USER ? [] : demoBudgets;
 export const recentTransactions: Transaction[] = SIMULATE_NEW_USER ? [] : demoTransactions;
 export const bills: SharedDebt[] = SIMULATE_NEW_USER ? [] : demoBills;
