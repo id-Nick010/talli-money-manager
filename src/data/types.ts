@@ -67,11 +67,12 @@ export type TransactionKind = 'income' | 'expense';
 
 export type Transaction = {
   id: string;
+  kind: TransactionKind | 'transfer';
   title: string;
   date: Date;
-  /** The account it was paid from or into, shown as "@ Main Account". */
+  /** The account it was paid from or into, shown as "@ Main Account"; "BPI → Cash" for a transfer. */
   accountName: string;
-  /** Signed amount: positive = money in, negative = money out. */
+  /** Signed amount: positive = money in, negative = money out. Always positive for a transfer. */
   amount: number;
   icon:
     | { type: 'icon'; name: IconName }

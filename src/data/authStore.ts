@@ -6,6 +6,7 @@ import { clearAccounts, loadAccounts } from './accountsStore';
 import { createValueStore } from './createValueStore';
 import { setPrimaryFeature, type PrimaryFeature } from './preferencesStore';
 import { setAppearance, setCurrency, updateProfile } from './profileStore';
+import { clearTransactions, loadTransactions } from './transactionsStore';
 
 type AuthState = {
   /** False until the saved session (and its user row) has been checked on launch. */
@@ -33,6 +34,7 @@ export const getUserId = () => store.getValue().userId;
 async function applySession(session: Session | null) {
   if (!session) {
     clearAccounts();
+    clearTransactions();
     store.update({ ready: true, session: null, userId: null, onboarding: false });
     return;
   }
@@ -57,7 +59,7 @@ async function applySession(session: Session | null) {
     setAppearance(data.appearance);
     if (data.primary_feature) setPrimaryFeature(data.primary_feature as PrimaryFeature);
     // Loaded before the guards open the dashboard, so it doesn't flash the getting-started state.
-    await loadAccounts();
+    await Promise.all([loadAccounts(), loadTransactions()]);
   }
 
   // Session and onboarding change together, so the router never shows the tabs for a frame first.

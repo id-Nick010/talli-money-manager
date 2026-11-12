@@ -6,7 +6,7 @@ import { useAccounts } from '@/data/accountsStore';
 import { expenseCategories, incomeCategories } from '@/data/categories';
 import type { TransactionKind } from '@/data/types';
 import { colors, shadows, typography, type TypographyVariant } from '@/theme';
-import { CURRENCY_SYMBOL, formatAmountInput, parseAmount } from '@/utils/format';
+import { CURRENCY_SYMBOL, formatAmountInput, formatCurrency, parseAmount } from '@/utils/format';
 
 import { AccountPicker } from './AccountPicker';
 import { SegmentedControl } from './SegmentedControl';
@@ -20,13 +20,26 @@ type DraftBase = { amount: number; description: string; date: Date };
 
 export type TransactionDraft =
   | (DraftBase & { kind: TransactionKind; categoryId: string; accountId: string })
-  | (DraftBase & { kind: 'transfer'; fromAccountId: string; toAccountId: string });
+  | (DraftBase & {
+      kind: 'transfer';
+      fromAccountId: string;
+      toAccountId: string;
+      /** Charged to the sender on top of the amount and logged as an expense; 0 for none. */
+      fee: number;
+    });
 
 type Props = {
   /** Called once the dismiss animation finishes. Keep it referentially stable. */
   onClose: () => void;
-  onSubmit: (draft: TransactionDraft) => void;
+  /** Resolves to an error message to show, or null once saved. */
+  onSubmit: (draft: TransactionDraft) => Promise<string | null>;
 };
+
+/** Credit cards can go further into debt, so only other accounts need enough money to send. */
+const CREDIT_CARD = 'credit-card';
+
+/** Whole cents, so comparing money isn't thrown off by floating-point rounding. */
+const toCents = (amount: number) => Math.round(amount * 100);
 
 const MODE_OPTIONS = [
   { value: 'expense', label: 'Expenses' },
@@ -76,6 +89,9 @@ export function AddTransactionSheet({ onClose, onSubmit }: Props) {
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState(firstCategory('expense'));
   const [date, setDate] = useState(() => new Date());
+  const [fee, setFee] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const config = MODE_CONFIG[mode];
 
   const accounts = useAccounts();
@@ -101,19 +117,37 @@ export function AddTransactionSheet({ onClose, onSubmit }: Props) {
     mode === 'transfer'
       ? fromAccountId !== undefined && toAccountId !== undefined && fromAccountId !== toAccountId
       : accountId !== undefined;
-  const canSubmit = amountValue > 0 && accountsReady;
 
-  const submit = (close: () => void) => {
+  // Transfers: the sender pays the amount plus the fee, and must have that much unless it's a credit card.
+  const feeValue = parseAmount(fee);
+  const fromAccount = accounts.find((account) => account.id === fromAccountId);
+  const totalOut = amountValue + feeValue;
+  const notEnough =
+    mode === 'transfer' &&
+    fromAccount !== undefined &&
+    fromAccount.typeId !== CREDIT_CARD &&
+    toCents(totalOut) > toCents(fromAccount.balance);
+
+  const canSubmit = amountValue > 0 && accountsReady && !notEnough && !saving;
+
+  // The sheet stays open until the save succeeds, so a failed save keeps what was typed.
+  const submit = async (close: () => void) => {
     if (!canSubmit) return;
     const base = { amount: amountValue, description: description.trim(), date };
+    let draft: TransactionDraft;
     if (mode === 'transfer') {
       if (!fromAccountId || !toAccountId) return;
-      onSubmit({ ...base, kind: 'transfer', fromAccountId, toAccountId });
+      draft = { ...base, kind: 'transfer', fromAccountId, toAccountId, fee: feeValue };
     } else {
       if (!accountId) return;
-      onSubmit({ ...base, kind: mode, categoryId, accountId });
+      draft = { ...base, kind: mode, categoryId, accountId };
     }
-    close();
+    setSaving(true);
+    setSaveError(null);
+    const error = await onSubmit(draft);
+    setSaving(false);
+    if (error) setSaveError(error);
+    else close();
   };
 
   const withAccount = mode !== 'transfer' && accounts.length > 0;
@@ -195,6 +229,40 @@ export function AddTransactionSheet({ onClose, onSubmit }: Props) {
             </AppText>
           ) : null}
 
+          {mode === 'transfer' ? (
+            <View style={styles.field}>
+              <AppText variant="fieldLabelSm" color="textSecondary">
+                Transfer Fee
+              </AppText>
+              <View style={[styles.box, styles.smallBox, styles.feeBox]}>
+                <AppText variant="input" color="textSecondary">
+                  {CURRENCY_SYMBOL}
+                </AppText>
+                <TextInput
+                  value={fee}
+                  onChangeText={(text) => setFee(formatAmountInput(text))}
+                  placeholder="0.00 (optional)"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  selectionColor={colors.brand}
+                  cursorColor={colors.brand}
+                  accessibilityLabel="Transfer fee"
+                  accessibilityHint="Charged to the sending account and logged as an expense"
+                  style={[styles.input, typography.input]}
+                />
+              </View>
+              {notEnough && fromAccount ? (
+                <AppText variant="caption" color="danger" accessibilityLiveRegion="polite">
+                  {`Not enough in ${fromAccount.name}. Available: ${formatCurrency(fromAccount.balance, { decimals: 2 })}`}
+                </AppText>
+              ) : feeValue > 0 && fromAccount ? (
+                <AppText variant="caption" color="textSecondary">
+                  {`${formatCurrency(totalOut, { decimals: 2 })} leaves ${fromAccount.name}; the fee is logged as an expense.`}
+                </AppText>
+              ) : null}
+            </View>
+          ) : null}
+
           <View style={styles.fieldsRow}>
             <View style={[styles.field, styles.flex]}>
               <AppText variant={config.descriptionLabel} color="textSecondary">
@@ -250,8 +318,13 @@ export function AddTransactionSheet({ onClose, onSubmit }: Props) {
             </View>
           ) : null}
 
+          {saveError ? (
+            <AppText variant="captionSm" color="danger" accessibilityLiveRegion="polite">
+              {saveError}
+            </AppText>
+          ) : null}
           <SheetButton
-            label={config.submitLabel}
+            label={saving ? 'Saving…' : config.submitLabel}
             disabled={!canSubmit}
             onPress={() => submit(close)}
             style={mode === 'transfer' && styles.transferButton}
@@ -315,6 +388,9 @@ const styles = StyleSheet.create({
   smallBox: {
     padding: 10 - STROKE,
     borderRadius: 10,
+  },
+  feeBox: {
+    gap: 6,
   },
   input: {
     flex: 1,

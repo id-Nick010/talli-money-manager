@@ -17,8 +17,10 @@ type Props = {
 
 /** "Spotify Premium · Today @ Main Account · -₱229" row in Recent Transactions. */
 export function TransactionRow({ transaction, onPress }: Props) {
-  const { title, date, accountName, amount, icon } = transaction;
-  const amountLabel = formatCurrency(amount, { signed: true, trim: true });
+  const { kind, title, date, accountName, amount, icon } = transaction;
+  // A transfer only moves money between your accounts, so it has no sign and a neutral colour.
+  const isTransfer = kind === 'transfer';
+  const amountLabel = formatCurrency(amount, { signed: !isTransfer, trim: true });
   const when = formatDateLabel(date);
 
   return (
@@ -45,7 +47,7 @@ export function TransactionRow({ transaction, onPress }: Props) {
             {`${when} @ ${accountName}`}
           </AppText>
         </View>
-        <AppText variant="amountRow" color={amount >= 0 ? 'success' : 'danger'}>
+        <AppText variant="amountRow" color={isTransfer ? 'textPrimary' : amount >= 0 ? 'success' : 'danger'}>
           {amountLabel}
         </AppText>
       </Card>

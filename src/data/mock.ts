@@ -1,15 +1,14 @@
 import type { AvatarData } from '@/components/ui/Avatar';
+import { startOfMonth } from '@/utils/date';
 
 import type {
   BillActivity,
   BillsSummary,
   Budget,
-  MonthlySummary,
   NotificationPreferences,
   Profile,
   SecurityPreferences,
   SharedDebt,
-  Transaction,
 } from './types';
 
 const people = {
@@ -62,14 +61,8 @@ export const securityPreferences: SecurityPreferences = {
  */
 export const SIMULATE_NEW_USER = true;
 
-export const currentMonth = new Date(2026, 8, 1);
-
-export const monthlySummary: MonthlySummary = SIMULATE_NEW_USER
-  ? { income: 0, expenses: 0 }
-  : {
-      income: 5200,
-      expenses: 2340,
-    };
+/** The month Home and Budgets show; totals cover this month. */
+export const currentMonth = startOfMonth(new Date());
 
 const demoBudgets: Budget[] = [
   { id: 'food', category: 'Food & Dining', spent: 340, limit: 500 },
@@ -135,40 +128,6 @@ export const billActivity: Record<string, BillActivity[]> = {
   ],
 };
 
-const subscriptionArtwork = require('@/assets/images/tx-subscription.png');
-
-const daysAgo = (days: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate() - days);
-
-const demoTransactions: Transaction[] = [
-  {
-    id: 'tx-1',
-    title: 'Spotify Premium',
-    date: daysAgo(0),
-    accountName: 'Main Account',
-    amount: -114.5,
-    icon: { type: 'artwork', source: subscriptionArtwork },
-  },
-  {
-    id: 'tx-2',
-    title: 'Spotify Premium',
-    date: daysAgo(0),
-    accountName: 'Main Account',
-    amount: -114.5,
-    icon: { type: 'artwork', source: subscriptionArtwork },
-  },
-  {
-    id: 'tx-3',
-    title: 'Transfer from Jake',
-    date: daysAgo(1),
-    accountName: 'Main Account',
-    amount: 45,
-    icon: { type: 'icon', name: 'arrowDown' },
-  },
-  { id: 'tx-4', title: 'Uber Ride', date: daysAgo(1), accountName: 'Main Account', amount: -18.5, icon: { type: 'icon', name: 'car' } },
-  { id: 'tx-5', title: 'Amazon', date: daysAgo(2), accountName: 'Savings', amount: -34.99, icon: { type: 'icon', name: 'package' } },
-];
-
 export const budgets: Budget[] = SIMULATE_NEW_USER ? [] : demoBudgets;
-export const recentTransactions: Transaction[] = SIMULATE_NEW_USER ? [] : demoTransactions;
 export const bills: SharedDebt[] = SIMULATE_NEW_USER ? [] : demoBills;
 export const billsSummary: BillsSummary = SIMULATE_NEW_USER ? { owedToYou: 0, youOwe: 0 } : demoBillsSummary;
